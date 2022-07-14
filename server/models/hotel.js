@@ -1,14 +1,14 @@
 const mongoose = require("mongoose");
 
 const hotelSchema = mongoose.Schema({
-    // name 
-    // email
-    // location
-    // cover pic
-    // contact number
-    // state
-    // rooms
-    // description
+  // name
+  // email
+  // location
+  // cover pic
+  // contact number
+  // state
+  // rooms
+  // description
   name: {
     type: String,
     required: [true, "a hotel must have a name"],
@@ -23,7 +23,7 @@ const hotelSchema = mongoose.Schema({
   },
   cover_pic: {
     type: String,
-    required: [true, "a hotel must have a cover image"],
+    required: [false, "a hotel must have a cover image"],
   },
   certificates: [String],
   contact_number: {
@@ -53,13 +53,13 @@ const hotelSchema = mongoose.Schema({
     description: String,
   },
   rooms: {
-    type: Number,
-    required: [true, "a hostel must have a room count"],
+    type: [String],
+    required: [false, "a hotel must have a room count"],
   },
-//   created_by: {
-//     type: mongoose.Schema.ObjectId,
-//     ref: "User",
-//   },
+  //   created_by: {
+  //     type: mongoose.Schema.ObjectId,
+  //     ref: "User",
+  //   },
   state: {
     type: String,
     required: [true, "a hotel must have a state"],
