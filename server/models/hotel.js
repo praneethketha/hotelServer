@@ -53,8 +53,8 @@ const hotelSchema = mongoose.Schema({
     description: String,
   },
   rooms: {
-    type: Number,
-    required: [false, "a hostel must have a room count"],
+    type: [String],
+    required: [false, "a hotel must have a room count"],
   },
   //   created_by: {
   //     type: mongoose.Schema.ObjectId,

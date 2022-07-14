@@ -23,9 +23,7 @@ const DB = process.env.DATABASE.replace(
 mongoose
   .connect(DB)
   .then(() => console.log("Connected to db"))
-  .then(() => {
-    app.listen(5000);
-  })
+
   .catch((err) => console.log(err));
 
 // starting the server
