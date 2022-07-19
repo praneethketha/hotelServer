@@ -1,32 +1,36 @@
 const express = require("express");
-const {
-  createHotel,
-  updateHotel,
-  deleteHotel,
-  getHotel,
-  getAllHotel,
-} = require("../controllers/hotel.controller");
+const hotelController = require("../controllers/hotel.controller");
+const authController = require("./../controllers/auth.controller");
+const roomController = require("./../controllers/room.controller");
 
 const router = express.Router();
 
-//CREATE HOTEL
+router.route("/").get(hotelController.getAllHotel).post(
+  // authController.protect,
+  // authController.restrictTo("admin", "hotelmanager"),
+  hotelController.createHotel
+);
 
-router.post("/", createHotel);
+router
+  .route("/:id")
+  .get(hotelController.getHotel)
+  .patch(
+    authController.protect,
+    authController.restrictTo("admin", "hotelmanager"),
+    hotelController.updateHotel
+  )
+  .delete(
+    authController.protect,
+    authController.restrictTo("admin", "hotelmanager"),
+    hotelController.deleteHotel
+  );
 
-//UPDATE HOTEL
-
-router.put("/:id", updateHotel);
-
-//DELETE HOTEL
-
-router.delete("/:id", deleteHotel);
-
-//GET HOTEL
-
-router.get("/:id", getHotel);
-
-//GET ALL HOTELS
-
-router.get("/", getAllHotel);
+router
+  .route("/bookNow/:id")
+  .patch(
+    authController.protect,
+    roomController.updateRoomAvailability,
+    hotelController.bookRoom
+  );
 
 module.exports = router;

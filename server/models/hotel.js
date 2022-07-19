@@ -1,73 +1,95 @@
 const mongoose = require("mongoose");
+const User = require("./user");
+const Room = require("./rooms");
+const filterToSelect = require("./../utils/filterToSelect");
 
-const hotelSchema = mongoose.Schema({
-  // name
-  // email
-  // location
-  // cover pic
-  // contact number
-  // state
-  // rooms
-  // description
-  name: {
-    type: String,
-    required: [true, "a hotel must have a name"],
-    unique: true,
-    trim: true,
-  },
-  email: String,
-  description: {
-    type: String,
-    trim: true,
-    required: [true, "a hotel must have a description"],
-  },
-  cover_pic: {
-    type: String,
-    required: [false, "a hotel must have a cover image"],
-  },
-  certificates: [String],
-  contact_number: {
-    type: Number,
-    match: /^[0-9]{10}/,
-    required: [true, "a hotel must have a contact number"],
-    validate: {
-      validator: function (val) {
-        const reg = /\+?\d[\d -]{8,12}\d/;
-        return reg.test(val);
-      },
-      message: "please enter valid mobile number",
-    },
-  },
-  location: {
-    type: {
+const hotelSchema = mongoose.Schema(
+  {
+    name: {
       type: String,
-      default: "Point",
-      enum: ["Point"],
-    },
-    coordinates: [Number],
-    address: {
-      type: String,
-      required: [true, "a hotel must have a address"],
+      required: [true, "Please provide a name"],
+      unique: true,
       trim: true,
     },
-    description: String,
+    description: {
+      type: String,
+      trim: true,
+      required: [true, "Please provide a description"],
+    },
+    cover_pic: {
+      type: String,
+      required: [false, "Please provide a cover image"],
+    },
+    images: [String],
+    contact_number: {
+      type: Number,
+      match: /^[0-9]{10}/,
+      required: [true, "Please provide a contact number"],
+      validate: {
+        validator: function (val) {
+          const reg = /\+?\d[\d -]{8,12}\d/;
+          return reg.test(val);
+        },
+        message: "please enter valid mobile number",
+      },
+    },
+    location: {
+      type: {
+        type: String,
+        default: "Point",
+        enum: ["Point"],
+      },
+      coordinates: [Number],
+      address: {
+        type: String,
+        required: [false, "Please provide the address"],
+        trim: true,
+      },
+      description: String,
+    },
+    rating: {
+      type: Number,
+      min: 0,
+      max: 5,
+      default: 3,
+    },
+    basePrice: {
+      type: Number,
+      required: [true, "Please provide a base price"],
+    },
+    created_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    city: {
+      type: String,
+      required: [true, "Please provide the city"],
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now(),
+    },
   },
-  rooms: {
-    type: [String],
-    required: [false, "a hotel must have a room count"],
-  },
-  //   created_by: {
-  //     type: mongoose.Schema.ObjectId,
-  //     ref: "User",
-  //   },
-  state: {
-    type: String,
-    required: [true, "a hotel must have a state"],
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now(),
-  },
+  {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
+
+hotelSchema.virtual("rooms", {
+  ref: "Room",
+  foreignField: "hotel",
+  localField: "_id",
+});
+
+hotelSchema.pre(/^find/, function (next) {
+  // populating user with id
+  this.populate({
+    path: "created_by",
+    select: filterToSelect(User.schema.paths, "name", "email", "_id"),
+  });
+
+  next();
 });
 
 const Hotel = mongoose.model("Hotel", hotelSchema);

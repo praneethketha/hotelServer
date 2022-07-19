@@ -1,14 +1,3 @@
-// const express = require("express");
-
-// const { app, connect } = require("../app.js");
-
-// const port = 8000;
-// app.listen(port, () => {
-//   connect();
-//   console.log("Connected to DB");
-//   console.log("Server is listening port", port);
-// });
-
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const app = require("./../app");
@@ -16,7 +5,7 @@ dotenv.config({ path: "./.env" });
 
 // mongoose connection
 const DB = process.env.DATABASE.replace(
-  "<password>",
+  "<PASSWORD>",
   process.env.DATABASE_PASSWORD
 );
 

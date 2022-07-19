@@ -1,71 +1,74 @@
 const Hotel = require("../models/hotel");
 const Room = require("../models/rooms");
+const catchAsync = require("./../utils/catchAsync");
 
-const createRoom = async (req, res) => {
-  const newRoom = new Room(req.body);
+exports.createRoom = catchAsync(async (req, res, next) => {
+  const savedRoom = await Room.create(req.body);
 
-  try {
-    const savedRoom = await newRoom.save();
+  res.status(201).json({
+    status: "success",
+    data: savedRoom,
+  });
+});
 
-    try {
-      await Hotel.findByIdAndUpdate(req.params.hotelId, {
-        $push: { rooms: savedRoom._id },
-      });
-    } catch (err) {
-      res.send(err);
+exports.updateRoom = catchAsync(async (req, res, next) => {
+  const updatedRoom = await Room.findByIdAndUpdate(
+    req.params.id,
+    { $set: req.body },
+    { new: true }
+  );
+
+  if (!updatedRoom) {
+    return next(new AppError("No Room with that ID", 404));
+  }
+
+  res.status(200).json({ status: "success", data: updatedRoom });
+});
+
+exports.updateRoomAvailability = catchAsync(async (req, res, next) => {
+  await Room.updateOne(
+    { "roomNumbers._id": req.params.id },
+    {
+      $push: {
+        "roomNumbers.$.unavailableDates": req.body.dates,
+      },
     }
+  );
 
-    res.status(200).send(savedRoom);
-  } catch (err) {
-    res.send(err);
+  next();
+});
+
+exports.deleteRoom = catchAsync(async (req, res) => {
+  const room = await Room.findByIdAndDelete(req.params.id);
+
+  if (!room) {
+    return next(new AppError("No Room with that ID", 404));
   }
-};
 
-const updateRoom = async (req, res) => {
-  try {
-    const updatedRoom = await Room.findByIdAndUpdate(
-      req.params.id,
-      { $set: req.body },
-      { new: true }
-    );
-    res.status(200).send(updatedRoom);
-  } catch (err) {
-    res.send(err);
+  res.status(204).json({
+    status: "success",
+    data: null,
+  });
+});
+
+exports.getRoom = catchAsync(async (req, res) => {
+  const room = await Room.findById(req.params.id);
+
+  if (!room) {
+    return next(new AppError("No Room with that ID", 404));
   }
-};
 
-const deleteRoom = async (req, res) => {
-  try {
-    await Room.findByIdAndDelete(req.params.id);
-    res.status(200).send("Room deleted Succesfully");
-  } catch (err) {
-    res.send(err);
-  }
-};
+  res.status(200).json({
+    staus: "success",
+    data: room,
+  });
+});
 
-const getRoom = async (req, res) => {
-  try {
-    const room = await Room.findById(req.params.id);
-    res.status(200).send(room);
-  } catch (err) {
-    res.send(err);
-  }
-};
+exports.getAllRooms = catchAsync(async (req, res) => {
+  const rooms = await Room.find();
 
-const getAllRooms = async (req, res) => {
-  try {
-    const rooms = await Room.find();
-
-    res.status(200).send(rooms);
-  } catch (err) {
-    res.send(err);
-  }
-};
-
-module.exports = {
-  createRoom,
-  updateRoom,
-  deleteRoom,
-  getRoom,
-  getAllRooms,
-};
+  res.status(200).json({
+    status: "success",
+    data: rooms,
+  });
+});
