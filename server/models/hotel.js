@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const User = require("./user");
-const Room = require("./rooms");
 const filterToSelect = require("./../utils/filterToSelect");
 
 const hotelSchema = mongoose.Schema(
@@ -19,6 +18,16 @@ const hotelSchema = mongoose.Schema(
     cover_pic: {
       type: String,
       required: [false, "Please provide a cover image"],
+    },
+    rating: {
+      type: Number,
+      default: 3,
+      min: 1,
+      max: 5,
+    },
+    ratingsQuantity: {
+      type: Number,
+      default: 0,
     },
     images: [String],
     contact_number: {
@@ -47,12 +56,6 @@ const hotelSchema = mongoose.Schema(
       },
       description: String,
     },
-    rating: {
-      type: Number,
-      min: 0,
-      max: 5,
-      default: 3,
-    },
     basePrice: {
       type: Number,
       required: [true, "Please provide a base price"],
@@ -76,8 +79,22 @@ const hotelSchema = mongoose.Schema(
   }
 );
 
+// virtuals -> creating property with help of other properties
+// dereived properties -> getting value from another existing property.
+// instead of storing we just displayed.
+
+// populating -> normal popluating, virtual populating
+// normal populations -> child referneicng
+// virtual populating -> parent referencing
 hotelSchema.virtual("rooms", {
   ref: "Room",
+  foreignField: "hotel",
+  localField: "_id",
+});
+// -> link betwen two schema
+
+hotelSchema.virtual("reviews", {
+  ref: "Review",
   foreignField: "hotel",
   localField: "_id",
 });

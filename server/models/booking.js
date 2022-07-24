@@ -20,13 +20,28 @@ const bookingSchema = mongoose.Schema({
     type: Date,
     required: [true, "Please enter the to date"],
   },
+  amount: {
+    type: Number,
+    required: [true, "Please provide total bill"],
+  },
   createdAt: {
     type: Date,
     default: Date.now(),
   },
 });
 
+// middlewares
+// two -> query middleware, document middleware
+
+// document middleware -> only runs on particular method perfomed on schema.
+// find({})
+// findAndUpdate()
+// findOneAndDel
+
+// bookings -> find({}) -> populate hotel and user -> find({}) -> results along with the population
+
 bookingSchema.pre(/^find/, function (next) {
+  // this -> document that we are accessing
   this.populate({
     path: "hotel",
     select: filterToSelect(Hotel.schema.paths, "name", "_id", "rooms"),

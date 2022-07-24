@@ -8,6 +8,7 @@ const hotelRoute = require("./routes/hotel.routes");
 const roomRoute = require("./routes/room.routes");
 const usersRouter = require("./routes/user.routes");
 const bookingsRouter = require("./routes/booking.routes");
+const reviewsRouter = require("./routes/review.routes");
 
 // 3) OTHER CUSTOM MODULES
 const AppError = require("./utils/appError");
@@ -31,6 +32,7 @@ app.use("/api/v1/hotels", hotelRoute);
 app.use("/api/v1/rooms", roomRoute);
 app.use("/api/v1/users", usersRouter);
 app.use("/api/v1/bookings", bookingsRouter);
+app.use("/api/v1/reviews", reviewsRouter);
 
 // 6) OTHERS THAN SPECIFIED ROUTES
 app.all("*", (req, res, next) => {

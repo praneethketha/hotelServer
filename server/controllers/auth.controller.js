@@ -19,22 +19,18 @@ const generateToken = (id) => {
 
 ///setting the JWT as a cookie
 const createSendToken = (user, statusCode, res) => {
+  // 200, 201
   const token = generateToken(user._id);
 
   // Remove password from output
   user.password = undefined;
 
-  res
-    .cookie("jwtoken", token, {
-      expires: new Date(Date.now() + 864000000),
-      httpOnly: true,
-    })
-    .status(statusCode)
-    .json({
-      status: "success",
-      token,
-      data: user,
-    });
+  // need to be in the same domin. -> //8000 //8000 -> server side rendering
+  res.status(statusCode).json({
+    status: "success",
+    token,
+    data: user,
+  });
 };
 
 //SIGNUP CONTROLLER
@@ -61,12 +57,17 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError("Please provide email and password!", 400));
   }
   //2) Check if users exists and password is correct
+  // user document -> a single user from the database.
   const user = await User.findOne({ email })
     .populate("bookings")
     .select("+password");
 
   if (!user || !(await user.comparePassword(password, user.password))) {
     return next(new AppError("Incorrect email or password", 401));
+  }
+
+  if (!user.verified) {
+    return sendOTPVerificationMail(user, res, next);
   }
 
   //3 Checking whether the user is active
@@ -90,6 +91,8 @@ exports.protect = catchAsync(async (req, res, next) => {
     token = req.headers.authorization.split(" ")[1];
   }
 
+  // split(" ") "Bearer token" -> ["Baearer", "token"]
+
   if (!token) {
     return next(
       new AppError("You are not logged in! Please log in to get access", 401)
@@ -97,6 +100,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
 
   // 2) Verification of token
+  // creation of JWT -> user._id -> decoded JWT -> user._id
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
   //3) Check if user still exists
@@ -115,12 +119,16 @@ exports.protect = catchAsync(async (req, res, next) => {
     );
   }
 
+  // req -> object
+  // property -> user -> current User
+
   req.user = currentUser;
   next();
 });
 
 //AUTHORIZATION CONTROLLER
 exports.restrictTo = (...role) => {
+  // [adimin, user, bjbg]
   return (req, res, next) => {
     if (!role.includes(req.user.role)) {
       return next(
@@ -146,7 +154,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   await user.save({ validateBeforeSave: false });
 
   //3) Send it to user's email
-  const message = `<p> Dear ${user.name}, <br /> <br /> <p>&emsp; We received a request to reset your password for your Fund Raiser account: ${user.email}. Please click below linkt to reset your password. It will work only for 10 mintues.</p> <br /><a class="reset-password" href="http://localhost:3000/resetPassword/${resetToken}">Reset password</a><br /> <p>If you did not request to reset your password, please ignore this message.</p> <br /><p>Thank you,</p> <p>Rentea Team.</p>`;
+  const message = `We received a request to reset your password for your Rentea account. Please click below link to reset your password. It will work only for 10 mintues.`;
 
   //3A) Reading template from the views
   let template = fs.readFileSync(
@@ -156,6 +164,15 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
   const original_template = template;
   template = template.replace(/{%MESSAGE%}/g, message);
+  template = template.replace(/{%TITLE%}/g, "Reset Your Password");
+  template = template.replace(/{%NOPAYMENT%}/g, "noPayment");
+  template = template.replace(/{%USERNAME%}/g, user.name);
+  template = template.replace(/{%AMOUNT%}/g, "");
+  template = template.replace(
+    /{%RESETPASSWORD%}/g,
+    `<a href="http://localhost:3000/auth/resetPassword/${resetToken}" class="btn">Reset Password</a>`
+  );
+  template = template.replace(/{%DATE%}/g, "");
 
   //3B) Writing into the template file
   fs.writeFileSync(
@@ -197,15 +214,19 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 //RESET PASSWORD CONTROLLER
 exports.resetPassword = catchAsync(async (req, res, next) => {
   // 1) Get user based on the token
+  // encryption -> token
   const hashedToken = crypto
     .createHash("sha256")
     .update(req.params.token)
     .digest("hex");
 
+  // passwordResetToken == 1234
+  // token = 123 -> hashedTokne = 1234
+
   const user = await User.findOne({
     passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: Date.now() },
-  });
+  }).populate("bookings");
 
   // 2) If token has not expired, and there is user, set the new password
   if (!user) {
@@ -247,6 +268,9 @@ const sendOTPVerificationMail = catchAsync(async (user, res, next) => {
   const otp = `${Math.floor(1000 + Math.random() * 9000)}`;
   const hashedOTP = await bcrypt.hash(otp, 10);
 
+  // IF THE USER FORGETS TO VERIFY, THEN WE NEED TO DELETE THE PREVIOUSLY CREATED DOCUMENT
+  await Verify.findOneAndDelete({ user: user._id });
+
   // CREATING NEW VERIFICATION DOCUMENT
   const verificationOTP = new Verify({
     otp: hashedOTP,
@@ -255,7 +279,7 @@ const sendOTPVerificationMail = catchAsync(async (user, res, next) => {
   });
 
   //3) Send it to user's email
-  const message = `<p> Dear ${user.name}, <br /> <br /> <p>&emsp; We received a request to verify your email for your Fund Raiser account: ${user.email}. Here is your One Time Password(OTP) <b class="otp">${otp}</b>. It will work only for 10 mintues.</p> <br /><br /> <p>If you did not request to reset your password, please ignore this message.</p> <br /> <p>Thank you,</p> <p>Rentea Team.</p>`;
+  const message = `We received a request to verify your email for your Rentea account. Here is your One Time Password(OTP) <strong class="otp">${otp}</strong>. It will work only for 10 mintues.`;
 
   //3A) Reading template from the views
   let template = fs.readFileSync(
@@ -263,8 +287,14 @@ const sendOTPVerificationMail = catchAsync(async (user, res, next) => {
     "utf-8"
   );
 
-  const original_template = template;
+  const original_template = template; //backup
   template = template.replace(/{%MESSAGE%}/g, message);
+  template = template.replace(/{%TITLE%}/g, "Verify Account!!!");
+  template = template.replace(/{%NOPAYMENT%}/g, "noPayment");
+  template = template.replace(/{%USERNAME%}/g, user.name);
+  template = template.replace(/{%AMOUNT%}/g, "");
+  template = template.replace(/{%RESETPASSWORD%}/g, "");
+  template = template.replace(/{%DATE%}/g, "");
 
   //3B) Writing into the template file
   fs.writeFileSync(
@@ -328,6 +358,7 @@ exports.verifyOTP = catchAsync(async (req, res, next) => {
     return next(new AppError("please enter otp", 404));
   }
 
+  // getting verifyOTP document verify model
   const verificationOTP = await Verify.findOne({ user: user_id });
 
   const user = await User.findById(user_id).populate("bookings");

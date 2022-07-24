@@ -27,14 +27,15 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     "address",
     "contact_number",
     "photo",
-    "verified"
+    "verified",
+    "active"
   );
 
   // 3) Update user document
   const updatedUser = await User.findByIdAndUpdate(req.user._id, filteredBody, {
     new: true,
     runValidators: true,
-  });
+  }).populate("bookings");
 
   res.status(200).json({
     status: "success",
@@ -52,7 +53,13 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
 });
 
 exports.getAllUsers = catchAsync(async (req, res) => {
-  const users = await User.find();
+  // pagination
+  const page = req.query.page * 1 || 1;
+  const limit = req.query.limit * 1 || 100;
+  const skip = (page - 1) * limit;
+
+  const users = await User.find().skip(skip).limit(limit);
+
   res.status(200).json({
     status: "success",
     results: users.length,
@@ -68,7 +75,7 @@ exports.createUser = (req, res) => {
 };
 
 exports.getUser = catchAsync(async (req, res, next) => {
-  const user = await User.findById(req.params.id);
+  const user = await User.findById(req.params.id).populate("bookings");
   if (!user) {
     return next(new AppError("no user found with that ID.", 404));
   }
@@ -100,7 +107,7 @@ exports.updateUser = catchAsync(async (req, res, next) => {
       new: true,
       runValidators: true,
     }
-  );
+  ).populate("bookings");
 
   res.status(200).json({
     status: "success",

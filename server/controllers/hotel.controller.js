@@ -5,11 +5,29 @@ const catchAsync = require("./../utils/catchAsync");
 const AppError = require("./../utils/appError");
 
 exports.getAllHotel = catchAsync(async (req, res, next) => {
+  // copying the query params to a variable
   const searchTerm = req.query.key || "";
+  const queryObj = { ...req.query };
 
-  // name, city,
+  // excluding the features to handle filtering
+  const exclude_fields = ["page", "limit", "key"];
+  exclude_fields.forEach((el) => delete queryObj[el]);
 
-  const hotels = await Hotel.find({
+  // creating a query string
+  let queryStr = JSON.stringify(queryObj);
+  queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+
+  // filtering
+  let query = Hotel.find(JSON.parse(queryStr));
+
+  // pagination
+  const page = req.query.page * 1 || 1;
+  const limit = req.query.limit * 1 || 100;
+  const skip = (page - 1) * limit;
+  query = query.skip(skip).limit(limit);
+
+  // searching
+  query = query.find({
     $or: [
       {
         name: { $regex: searchTerm, $options: "$i" },
@@ -18,7 +36,9 @@ exports.getAllHotel = catchAsync(async (req, res, next) => {
         city: { $regex: searchTerm, $options: "$i" },
       },
     ],
-  }).sort("basePrice");
+  });
+
+  const hotels = await query.sort("basePrice");
 
   res.status(200).json({
     status: "success",
@@ -39,7 +59,9 @@ exports.createHotel = catchAsync(async (req, res, next) => {
 });
 
 exports.getHotel = catchAsync(async (req, res, next) => {
-  const hotel = await Hotel.findById(req.params.id).populate("rooms");
+  const hotel = await Hotel.findById(req.params.id)
+    .populate("reviews")
+    .populate("rooms");
 
   if (!hotel) {
     return next(new AppError("no hotel found with that ID.", 404));
@@ -76,6 +98,40 @@ exports.deleteHotel = catchAsync(async (req, res, next) => {
   res.status(204).json({
     status: "success",
     data: null,
+  });
+});
+
+exports.getPriceRange = catchAsync(async (req, res, next) => {
+  const hotels = await Hotel.find().sort("basePrice");
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      low: hotels[0].basePrice,
+      high: hotels[hotels.length - 1].basePrice,
+    },
+  });
+});
+
+exports.getByCities = catchAsync(async (req, res, next) => {
+  const stats = await Hotel.aggregate([
+    {
+      $match: {},
+    },
+    {
+      $group: {
+        _id: "$city",
+        numHotels: { $sum: 1 },
+        avgPrice: { $avg: "$basePrice" },
+        lowPrice: { $min: "$basePrice" },
+        highPrice: { $max: "$basePrice" },
+      },
+    },
+  ]).sort("_id");
+
+  res.status(200).json({
+    status: "success",
+    data: stats,
   });
 });
 

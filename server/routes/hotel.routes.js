@@ -5,11 +5,13 @@ const roomController = require("./../controllers/room.controller");
 
 const router = express.Router();
 
-router.route("/").get(hotelController.getAllHotel).post(
-  // authController.protect,
-  // authController.restrictTo("admin", "hotelmanager"),
-  hotelController.createHotel
-);
+router.route("/priceRange").get(hotelController.getPriceRange);
+router.route("/cities").get(hotelController.getByCities);
+
+router
+  .route("/")
+  .get(hotelController.getAllHotel)
+  .post(hotelController.createHotel);
 
 router
   .route("/:id")
