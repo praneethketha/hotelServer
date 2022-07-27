@@ -38,7 +38,10 @@ exports.getAllHotel = catchAsync(async (req, res, next) => {
     ],
   });
 
-  const hotels = await query.sort("basePrice");
+  const hotels = await query
+    .sort("basePrice")
+    .populate("reviews")
+    .populate("rooms");
 
   res.status(200).json({
     status: "success",
@@ -152,3 +155,4 @@ exports.bookRoom = catchAsync(async (req, res, next) => {
     },
   });
 });
+

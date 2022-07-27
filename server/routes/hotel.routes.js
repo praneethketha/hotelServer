@@ -17,13 +17,13 @@ router
   .route("/:id")
   .get(hotelController.getHotel)
   .patch(
-    authController.protect,
-    authController.restrictTo("admin", "hotelmanager"),
+    // authController.protect,
+    // authController.restrictTo("admin", "hotelmanager"),
     hotelController.updateHotel
   )
   .delete(
-    authController.protect,
-    authController.restrictTo("admin", "hotelmanager"),
+    // authController.protect,
+    // authController.restrictTo("admin", "hotelmanager"),
     hotelController.deleteHotel
   );
 

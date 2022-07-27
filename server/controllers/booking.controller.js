@@ -117,3 +117,25 @@ exports.sendPaymentMail = catchAsync(async (req, res, next) => {
     );
   }
 });
+
+exports.getBookingsByDay = catchAsync(async (req, res, next) => {
+  const stats = await Booking.aggregate([
+    {
+      $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+        numBookings: { $sum: 1 },
+        sumAmount: { $sum: "$amount" },
+        avgAmount: { $avg: "$amount" },
+        minAmountDonated: { $min: "$amount" },
+        maxAmountDonated: { $max: "$amount" },
+      },
+    },
+    {
+      $sort: { _id: 1 },
+    },
+  ]);
+  res.status(200).json({
+    status: "success",
+    data: stats,
+  });
+});

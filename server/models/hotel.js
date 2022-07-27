@@ -17,7 +17,7 @@ const hotelSchema = mongoose.Schema(
     },
     cover_pic: {
       type: String,
-      required: [false, "Please provide a cover image"],
+      required: [true, "Please provide a cover image"],
     },
     rating: {
       type: Number,
@@ -30,18 +30,18 @@ const hotelSchema = mongoose.Schema(
       default: 0,
     },
     images: [String],
-    contact_number: {
-      type: Number,
-      match: /^[0-9]{10}/,
-      required: [true, "Please provide a contact number"],
-      validate: {
-        validator: function (val) {
-          const reg = /\+?\d[\d -]{8,12}\d/;
-          return reg.test(val);
-        },
-        message: "please enter valid mobile number",
-      },
-    },
+    // contact_number: {
+    //   type: Number,
+    //   match: /^[0-9]{10}/,
+    //   required: [true, "Please provide a contact number"],
+    //   validate: {
+    //     validator: function (val) {
+    //       const reg = /\+?\d[\d -]{8,12}\d/;
+    //       return reg.test(val);
+    //     },
+    //     message: "please enter valid mobile number",
+    //   },
+    // },
     location: {
       type: {
         type: String,
@@ -51,7 +51,7 @@ const hotelSchema = mongoose.Schema(
       coordinates: [Number],
       address: {
         type: String,
-        required: [false, "Please provide the address"],
+        required: [true, "Please provide the address"],
         trim: true,
       },
       description: String,

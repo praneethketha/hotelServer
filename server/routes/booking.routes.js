@@ -13,4 +13,6 @@ router
   .route("/payment/mail")
   .post(authController.protect, bookingController.sendPaymentMail);
 
+router.route("/getBookingStats").get(bookingController.getBookingsByDay);
+
 module.exports = router;

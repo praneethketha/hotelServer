@@ -58,7 +58,7 @@ exports.getAllUsers = catchAsync(async (req, res) => {
   const limit = req.query.limit * 1 || 100;
   const skip = (page - 1) * limit;
 
-  const users = await User.find().skip(skip).limit(limit);
+  const users = await User.find().skip(skip).limit(limit).populate("bookings");
 
   res.status(200).json({
     status: "success",
@@ -67,12 +67,16 @@ exports.getAllUsers = catchAsync(async (req, res) => {
   });
 });
 
-exports.createUser = (req, res) => {
-  res.status(500).send({
-    status: "error",
-    message: "<get all users>",
+exports.createUser = catchAsync(async (req, res, next) => {
+  console.log(req.body);
+  const user = await User.create({ ...req.body, verified: true });
+
+  console.log(user);
+  res.status(201).json({
+    status: "success",
+    data: user,
   });
-};
+});
 
 exports.getUser = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id).populate("bookings");
