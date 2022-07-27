@@ -31,8 +31,8 @@ router.patch("/verifyOTP", authController.verifyOTP);
 router
   .route("/")
   .get(
-    authController.protect,
-    authController.restrictTo("admin"),
+    // authController.protect,
+    // authController.restrictTo("admin"),
     userController.getAllUsers
   )
   .post(userController.createUser);

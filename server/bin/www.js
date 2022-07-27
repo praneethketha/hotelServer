@@ -9,11 +9,10 @@ const DB = process.env.DATABASE.replace(
   process.env.DATABASE_PASSWORD
 );
 
-mongoose
-  .connect(DB)
-  .then(() => console.log("Connected to db"))
+mongoose.connect(DB);
+// .then(() => console.log(err))
 
-  .catch((err) => console.log(err));
+// .catch((err) => console.log(err));
 
 // starting the server
 const server = app.listen(process.env.PORT || 8000, () => {
