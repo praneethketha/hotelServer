@@ -93,7 +93,7 @@ exports.updateHotel = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteHotel = catchAsync(async (req, res, next) => {
-  const hotel = await Hotel.findOneAndDelete(req.params.id);
+  const hotel = await Hotel.findByIdAndDelete(req.params.id);
 
   if (!hotel) {
     return next(new AppError("no hotel found with that ID.", 404));
@@ -123,7 +123,7 @@ exports.getByCities = catchAsync(async (req, res, next) => {
     },
     {
       $group: {
-        _id: "$city",
+        _id: { $toLower: "$city" },
         numHotels: { $sum: 1 },
         avgPrice: { $avg: "$basePrice" },
         lowPrice: { $min: "$basePrice" },
@@ -155,4 +155,3 @@ exports.bookRoom = catchAsync(async (req, res, next) => {
     },
   });
 });
-
